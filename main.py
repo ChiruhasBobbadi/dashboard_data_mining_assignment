@@ -12,6 +12,8 @@ from google.oauth2 import service_account  # pip install google-auth
 import pandas_gbq  # pip install pandas-gbq
 import plotly.graph_objects as go
 import plotly.io as pio
+from datetime import datetime
+from dateutil import parser
 
 credentials = service_account.Credentials.from_service_account_file(
     '/Users/chiruhasbobbadi/PycharmProjects/dash/assets/btcprice255-3bc9a00142bc.json')
@@ -22,8 +24,8 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SOLAR])
 myTitle = dcc.Markdown(children='# Temperature Analysis')
 california_graph_title = dcc.Markdown('## Temperature in California')
 myGraph = dcc.Graph(figure={})
-predGraphTitle = dcc.Markdown('## Temperature prediction in Santa Clara County')
-myGraph2 = dcc.Graph(figure={})
+# predGraphTitle = dcc.Markdown('## Temperature prediction in Santa Clara County')
+# myGraph2 = dcc.Graph(figure={})
 high = dcc.Markdown('## Counties with highest temperature in California during last 5 years')
 myGraph3 = dcc.Graph(figure={})
 scatter = dcc.Markdown('## Scatter plot of daily temperature and mean temperature in San jose city')
@@ -31,84 +33,80 @@ myGraph4 = dcc.Graph(figure={})
 usa = dcc.Markdown('## Average of last 5 years Temperature in USA by state')
 myGraph5 = dcc.Graph(figure={})
 
-dcc.Store(id='data')
-
-dropDown = dcc.Dropdown(options=['Daily Temperature vs Time', 'Maximum Temperature Vs Time'], value='Daily Temperature vs Time',
+dropDown = dcc.Dropdown(options=['Daily Temperature vs Time', 'Maximum Temperature Vs Time'],
+                        value='Daily Temperature vs Time',
                         clearable=False)
 
 app.layout = dbc.Container(
-    [myTitle, california_graph_title, myGraph, dropDown, predGraphTitle, myGraph2, high, myGraph3, scatter, myGraph4, usa, myGraph5])
+    [myTitle, california_graph_title, myGraph, dropDown, high, myGraph3, scatter, myGraph4,
+     usa, myGraph5, dcc.Store(id='myData', data=[], storage_type="memory")])
 df_sj = pd.DataFrame();
-
-
-
-
-
 
 ## functions
 us_state_to_abbrev = {
-        "Alabama": "AL",
-        "Alaska": "AK",
-        "Arizona": "AZ",
-        "Arkansas": "AR",
-        "California": "CA",
-        "Colorado": "CO",
-        "Connecticut": "CT",
-        "Delaware": "DE",
-        "Florida": "FL",
-        "Georgia": "GA",
-        "Hawaii": "HI",
-        "Idaho": "ID",
-        "Illinois": "IL",
-        "Indiana": "IN",
-        "Iowa": "IA",
-        "Kansas": "KS",
-        "Kentucky": "KY",
-        "Louisiana": "LA",
-        "Maine": "ME",
-        "Maryland": "MD",
-        "Massachusetts": "MA",
-        "Michigan": "MI",
-        "Minnesota": "MN",
-        "Mississippi": "MS",
-        "Missouri": "MO",
-        "Montana": "MT",
-        "Nebraska": "NE",
-        "Nevada": "NV",
-        "New Hampshire": "NH",
-        "New Jersey": "NJ",
-        "New Mexico": "NM",
-        "New York": "NY",
-        "North Carolina": "NC",
-        "North Dakota": "ND",
-        "Ohio": "OH",
-        "Oklahoma": "OK",
-        "Oregon": "OR",
-        "Pennsylvania": "PA",
-        "Rhode Island": "RI",
-        "South Carolina": "SC",
-        "South Dakota": "SD",
-        "Tennessee": "TN",
-        "Texas": "TX",
-        "Utah": "UT",
-        "Vermont": "VT",
-        "Virginia": "VA",
-        "Washington": "WA",
-        "West Virginia": "WV",
-        "Wisconsin": "WI",
-        "Wyoming": "WY",
-        "District of Columbia": "DC",
-        "American Samoa": "AS",
-        "Guam": "GU",
-        "Northern Mariana Islands": "MP",
-        "Puerto Rico": "PR",
-        "United States Minor Outlying Islands": "UM",
-        "Virgin Islands": "VI",
-        "Country Of Mexico": "MX",
-        "District Of Columbia": "COL"
-    }
-def plot_single_station_daily_temp(daily_temp_data, plot_fields= pd.DataFrame(), station_name="San Jose"):
+    "Alabama": "AL",
+    "Alaska": "AK",
+    "Arizona": "AZ",
+    "Arkansas": "AR",
+    "California": "CA",
+    "Colorado": "CO",
+    "Connecticut": "CT",
+    "Delaware": "DE",
+    "Florida": "FL",
+    "Georgia": "GA",
+    "Hawaii": "HI",
+    "Idaho": "ID",
+    "Illinois": "IL",
+    "Indiana": "IN",
+    "Iowa": "IA",
+    "Kansas": "KS",
+    "Kentucky": "KY",
+    "Louisiana": "LA",
+    "Maine": "ME",
+    "Maryland": "MD",
+    "Massachusetts": "MA",
+    "Michigan": "MI",
+    "Minnesota": "MN",
+    "Mississippi": "MS",
+    "Missouri": "MO",
+    "Montana": "MT",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "New Hampshire": "NH",
+    "New Jersey": "NJ",
+    "New Mexico": "NM",
+    "New York": "NY",
+    "North Carolina": "NC",
+    "North Dakota": "ND",
+    "Ohio": "OH",
+    "Oklahoma": "OK",
+    "Oregon": "OR",
+    "Pennsylvania": "PA",
+    "Rhode Island": "RI",
+    "South Carolina": "SC",
+    "South Dakota": "SD",
+    "Tennessee": "TN",
+    "Texas": "TX",
+    "Utah": "UT",
+    "Vermont": "VT",
+    "Virginia": "VA",
+    "Washington": "WA",
+    "West Virginia": "WV",
+    "Wisconsin": "WI",
+    "Wyoming": "WY",
+    "District of Columbia": "DC",
+    "American Samoa": "AS",
+    "Guam": "GU",
+    "Northern Mariana Islands": "MP",
+    "Puerto Rico": "PR",
+    "United States Minor Outlying Islands": "UM",
+    "Virgin Islands": "VI",
+    "Country Of Mexico": "MX",
+    "District Of Columbia": "COL"
+}
 
+
+def plot_single_station_daily_temp(daily_temp_data, plot_fields=pd.DataFrame(), station_name="San Jose"):
     daily_plot_data = []
     for index, row in plot_fields.iterrows():
         daily_plot_data = (daily_plot_data +
@@ -142,46 +140,63 @@ def plot_single_station_daily_temp(daily_temp_data, plot_fields= pd.DataFrame(),
         yaxis=dict(title='Temperature (°F)')
     )
     return go.Figure(daily_plot_data, daily_plot_layout)
+
+
 def nametoabb(name):
-        return us_state_to_abbrev[name]
+    return us_state_to_abbrev[name]
 
 
 # # # call back function
 @app.callback(
-    Output(myGraph, component_property='figure'),
+    Output('myData', 'data'),
     Input(dropDown, component_property='value')
 )
 def update_graph1(user_input):
-    print("triggered")
+    print("data updated")
     # I recommend running the SQL in Good Cloud to make sure it works
     # before running it here in your Dash App.
 
-
-
     df_sql = """SELECT *FROM `bigquery-public-data.epa_historical_air_quality.temperature_daily_summary`
-    WHERE date_local BETWEEN '2015-01-01' AND '2022-01-01' AND state_name='California' LIMIT 1000
+    WHERE date_local BETWEEN '2015-01-01' AND '2022-01-01'
     """
     df = pd.read_gbq(df_sql, project_id=project_id, dialect='standard', credentials=credentials)
-    print(len(df))
+    #print(len(df))
 
     df_temp = df.drop(
-        ["site_num", "parameter_code", "poc", "datum", "latitude", "longitude", "method_name", "date_of_last_change",
+        ["site_num", "parameter_code", "poc", "datum", "latitude", "longitude", "method_name",
+         "date_of_last_change",
          "parameter_name", "sample_duration", "pollutant_standard",
          "units_of_measure", "event_type", "observation_count", "observation_percent", "aqi", "method_code",
          "local_site_name", "address", "cbsa_name"
          ], axis=1)
 
-    df = df_temp['county_name'] == 'Santa Clara'
+    return df_temp.to_dict('records')
 
-    df_sj = df_temp[df]
 
-    fig = px.bar(data_frame=df_temp,x='date_local',y='arithmetic_mean', labels={'date_local' : 'TIME','arithmetic_mean':'Daily Temperature'})
+
+
+@app.callback(
+    Output(myGraph, component_property='figure'),
+    Input('myData', 'data'),
+    Input(dropDown, component_property='value')
+)
+def graph1(df_temp,user_input):
+    print("g1 triggerd")
+    df_temp = pd.DataFrame(df_temp)
+    ## sorting by state name
+    df = df_temp['state_name']=='California'
+    df_cal = df_temp[df]
+    fig = px.bar(data_frame=df_cal, x='date_local', y='arithmetic_mean',
+                 labels={'date_local': 'TIME', 'arithmetic_mean': 'Daily Temperature'})
     if 'Temperature vs Time' == user_input:
-        fig=  px.bar(data_frame=df_temp,x='date_local',y='arithmetic_mean', labels={'date_local' : 'TIME','arithmetic_mean':'Daily Temperature'})
-    elif 'Maximum Temperature Vs Time'==user_input:
-        fig= px.bar(data_frame=df_temp, x='date_local', y='first_max_value',labels={'date_local' : 'TIME','first_max_value':'Maximum Temperature'})
+        fig = px.bar(data_frame=df_cal, x='date_local', y='arithmetic_mean',
+                     labels={'date_local': 'TIME', 'arithmetic_mean': 'Daily Temperature'})
+    elif 'Maximum Temperature Vs Time' == user_input:
+        fig = px.bar(data_frame=df_cal, x='date_local', y='first_max_value',
+                     labels={'date_local': 'TIME', 'first_max_value': 'Maximum Temperature'})
 
     return fig
+
 
 
 ##todo
@@ -230,33 +245,19 @@ def update_graph1(user_input):
 
 @app.callback(
     Output(myGraph3, 'figure'),
-    Input(dropDown, 'value')
+    Input('myData', 'data')
 )
-def update_graph3(data):
-    print("Triggered")
-    df_sql = """SELECT *FROM `bigquery-public-data.epa_historical_air_quality.temperature_daily_summary`
-        WHERE date_local BETWEEN '2015-01-01' AND '2022-01-01' AND state_name='California'
-        """
-
-    df = pd.read_gbq(df_sql, project_id=project_id, dialect='standard', credentials=credentials)
-    print(len(df))
-
-    df_temp = df.drop(
-        ["site_num", "parameter_code", "poc", "datum", "latitude", "longitude", "method_name", "date_of_last_change",
-         "parameter_name", "sample_duration", "pollutant_standard",
-         "units_of_measure", "event_type", "observation_count", "observation_percent", "aqi", "method_code",
-         "local_site_name", "address", "cbsa_name"
-         ], axis=1)
-
+def update_graph3(temp):
+    print("g3 triggered")
+    df_temp =pd.DataFrame(temp)
     df_all = df_temp
-
     Latest_date = df_all["date_local"].max()
     latest_info = df_all[df_all["date_local"] == Latest_date]
 
     top_temp = latest_info.sort_values('first_max_value', ascending=False)
     tt = top_temp.groupby("county_name")['first_max_value'].max()
     tt = tt.reset_index()
-    #print(tt)
+
     fig = px.bar(top_temp, x=top_temp['county_name'], y=top_temp['first_max_value'])
 
     return fig
@@ -264,34 +265,18 @@ def update_graph3(data):
 # function to update scatter plot
 @app.callback(
     Output(myGraph4, 'figure'),
-    Input(dropDown, 'value')
+    Input('myData', 'data')
 )
 def update_graph4(df):
-    print("Triggered")
-    df_sql = """SELECT *FROM `bigquery-public-data.epa_historical_air_quality.temperature_daily_summary`
-            WHERE date_local BETWEEN '2015-01-01' AND '2022-01-01' AND state_name='California'
-            """
-
-    df = pd.read_gbq(df_sql, project_id=project_id, dialect='standard', credentials=credentials)
-    #     print(len(df))
-
-    df_temp = df.drop(
-        ["site_num", "parameter_code", "poc", "datum", "latitude", "longitude", "method_name", "date_of_last_change",
-         "parameter_name", "sample_duration", "pollutant_standard",
-         "units_of_measure", "event_type", "observation_count", "observation_percent", "aqi", "method_code",
-         "local_site_name", "address", "cbsa_name"
-         ], axis=1)
-    county = 'Santa Clara'
-    filter_case = 'arithmetic_mean'
-    period_to_forecast = 45
-
-    # Filter data
-
+    print("g4 Triggered")
+    df_temp = pd.DataFrame(df)
+    ## sorting by state name
+    df = df_temp['state_name'] == 'California'
+    df_temp = df_temp[df]
     dsj = df_temp['city_name'] == 'San Jose'
     df_sj = df_temp[dsj]
     print(len(df_sj))
     chosen_station_name = "San Jose"
-
     daily_temp_plot_fields = pd.DataFrame.from_records(
         columns=['field_name', 'plot_label', 'marker_symbol', 'line_color',
                  'plot_mode'],
@@ -300,8 +285,6 @@ def update_graph4(df):
             ('first_max_value', 'Max', 'triangle-up', None, 'markers'),
         ]
     )
-
-
     return plot_single_station_daily_temp(df_sj, daily_temp_plot_fields, chosen_station_name)
 
 
@@ -310,21 +293,11 @@ def update_graph4(df):
 
 @app.callback(
     Output(myGraph5, 'figure'),
-    Input(dropDown, 'value')
+    Input('myData', 'data')
 )
 def update_graph5(val):
-    print("Triggered")
-
-    query1 = """SELECT
-      date_local,arithmetic_mean,first_max_value,state_name,county_name
-    FROM
-      `bigquery-public-data.epa_historical_air_quality.temperature_daily_summary`
-      WHERE date_local BETWEEN '2017-01-01' AND '2022-01-01'
-            """
-
-    df_temp = pd.read_gbq(query1, project_id=project_id, dialect='standard', credentials=credentials)
-    print(len(df_temp))
-
+    print("G5 Triggered")
+    df_temp = pd.DataFrame(val)
 
     # invert the dictionary
     abbrev_to_us_state = dict(map(reversed, us_state_to_abbrev.items()))
