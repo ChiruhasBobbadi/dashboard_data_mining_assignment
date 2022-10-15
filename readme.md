@@ -15,9 +15,9 @@ In this assignment I found the following inferences from a temperature dataset t
 5. Scatter plot for daily temperature in San jose city
 
 
-# Images
+# Dashboard Images
 
-![Average temperature in California since 5 years](https://github.com/ChiruhasBobbadi/projectImages/blob/master/Data%20Mining%20Assignment/1.png)
+![Average temperature in California since 5 years](https://github.com/ChiruhasBobbadi/projectImages/blob/master/Data%20Mining%20Assignment/1a.png)
 
 ![Counties and their highest temperatures in california since last 5 years](https://github.com/ChiruhasBobbadi/projectImages/blob/master/Data%20Mining%20Assignment/2.png)
 
